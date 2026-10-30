@@ -8,6 +8,7 @@ Coleção das minhas **skills** e **agentes** personalizados para o [Claude Code
 |------|------|-----------|
 | Agente | [`project-builder`](agents/project-builder.md) | Transforma um briefing bruto (trabalho, metodologia, ideia) em um esqueleto de projeto já documentado, antes de qualquer código. |
 | Skill | [`project-builder`](project-builder/SKILL.md) | Atalho `/project-builder <briefing>` que despacha o agente de mesmo nome. |
+| Skill | [`feature-builder`](feature-builder/SKILL.md) | Planeja uma feature de um projeto existente, do brainstorm aos cards, e publica os cards num board do GitHub Projects. |
 | Skill | [`mkdocs-project-course`](mkdocs-project-course/SKILL.md) | Transforma os tickets de um projeto em um curso MkDocs para iniciantes, uma aula por ticket. |
 | Skill | [`geron-hands-on-ml`](geron-hands-on-ml/SKILL.md) | Base de conhecimento do livro *Hands-On Machine Learning* (Géron, 3ª ed.) para aplicar seus frameworks e receitas em projetos de ML. |
 
@@ -36,6 +37,41 @@ Não escreve código de aplicação, não faz commit/push e não inventa decisõ
 ```
 /project-builder <cole aqui o briefing>
 ```
+
+## feature-builder
+
+A mesma disciplina do `project-builder`, mas para **uma feature** de um projeto que já existe. Pode começar em qualquer fase:
+
+1. **Brainstorm**: enquadra o problema, gera de 6 a 10 ideias diferentes, compara valor, esforço e risco, e você escolhe.
+2. **Grilling**: rodadas de perguntas (skill `grilling`) até fechar escopo, comportamento, dados, encaixe no código e testes.
+3. **Spec**: `spec.md` com problema, solução, user stories, decisões de implementação e de testes, e fora de escopo.
+4. **Cards**: fatias verticais (*tracer bullets*), cada uma com seus bloqueadores, revisadas com você antes de gravar.
+5. **Publicação**: cada card vira uma issue no repo, sub-issue da issue-mãe da spec, com dependências "blocked by" nativas, e entra no board do GitHub Projects com o Status escolhido. Sempre passa antes por um *dry run* e pela sua confirmação.
+
+Se você já tem os cards (colados, numa lista ou em outro formato), ela normaliza tudo para o formato local e vai direto para a publicação.
+
+Entrega:
+
+```
+docs/features/<slug>/
+├── decisions.md   # log append-only das decisões da feature
+├── spec.md        # vira a issue-mãe no GitHub
+└── cards/01-*.md  # em ordem de dependência; recebem `issue: N` ao publicar
+```
+
+A publicação usa [`scripts/publish_to_github.py`](feature-builder/scripts/publish_to_github.py), que só precisa da biblioteca padrão do Python e do [GitHub CLI](https://cli.github.com/). Pode rodar de novo sem duplicar issues: cards já publicados são pulados, e um card novo é só um arquivo novo. Detalhes em [`references/github.md`](feature-builder/references/github.md).
+
+**Requer:** `gh` instalado e autenticado com o escopo `project` (`gh auth login` e depois `gh auth refresh -s project`). Usa a skill `grilling` (e `domain-modeling`, se houver glossário), que **não está neste repositório**.
+
+**Uso:**
+
+```
+/feature-builder quero algo para reduzir o abandono no onboarding   # parte do brainstorm
+/feature-builder exportar relatórios em CSV respeitando os filtros   # parte do grilling
+/feature-builder publicar docs/features/export-csv no project 3      # só publica
+```
+
+Também é acionada automaticamente quando a conversa é sobre planejar uma feature, quebrá-la em cards ou levar cards para um board do GitHub.
 
 ## mkdocs-project-course
 
@@ -84,7 +120,7 @@ git clone <url-deste-repositorio> && cd <pasta>
 
 # skills
 mkdir -p ~/.claude/skills ~/.claude/agents
-cp -r project-builder mkdocs-project-course geron-hands-on-ml ~/.claude/skills/
+cp -r project-builder feature-builder mkdocs-project-course geron-hands-on-ml ~/.claude/skills/
 
 # agente
 cp agents/project-builder.md ~/.claude/agents/
